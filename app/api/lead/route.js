@@ -1,33 +1,25 @@
 export async function POST(req) {
   try {
     const data = await req.json();
-    console.log("1. Dados recebidos do site:", data);
-
     const webhookUrl = process.env.LEAD_WEBHOOK_URL;
 
-    if (!webhookUrl) {
-      console.error(
-        "ERRO FATAL: A variável LEAD_WEBHOOK_URL não existe na Vercel!",
-      );
-      return Response.json({ ok: true, warning: "webhook não configurado" });
-    }
+    if (!webhookUrl) return Response.json({ ok: true });
 
-    console.log("2. Tentando enviar para o Google...");
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
 
+    // Se o Google retornar erro, vamos ler o texto
     const responseText = await response.text();
-    console.log("3. Resposta do Google:", responseText);
+
+    console.log(`3. Status do Google: ${response.status}`);
+    console.log(`4. Início da resposta: ${responseText.substring(0, 150)}`); // Mostra os primeiros 150 caracteres
 
     return Response.json({ ok: true });
   } catch (error) {
-    console.error(
-      "ERRO NO CATCH (A requisição falhou antes de chegar no Google):",
-      error,
-    );
+    console.error("ERRO:", error);
     return Response.json({ ok: false }, { status: 500 });
   }
 }
