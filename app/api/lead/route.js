@@ -1,36 +1,33 @@
 export async function POST(req) {
   try {
     const data = await req.json();
-    const { name, email, phone, niche, message } = data;
+    console.log("1. Dados recebidos do site:", data);
 
-    if (!name || !email || !phone) {
-      return Response.json(
-        { ok: false, error: "missing fields" },
-        { status: 400 },
+    const webhookUrl = process.env.LEAD_WEBHOOK_URL;
+
+    if (!webhookUrl) {
+      console.error(
+        "ERRO FATAL: A variável LEAD_WEBHOOK_URL não existe na Vercel!",
       );
+      return Response.json({ ok: true, warning: "webhook não configurado" });
     }
 
-    const lead = {
-      name,
-      email,
-      phone,
-      niche,
-      message,
-      createdAt: new Date().toISOString(),
-    };
+    console.log("2. Tentando enviar para o Google...");
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
 
-    console.log("[LEAD]", JSON.stringify(lead));
-
-    if (process.env.LEAD_WEBHOOK_URL) {
-      await fetch(process.env.LEAD_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(lead),
-      }).catch((e) => console.error("webhook error", e));
-    }
+    const responseText = await response.text();
+    console.log("3. Resposta do Google:", responseText);
 
     return Response.json({ ok: true });
-  } catch {
+  } catch (error) {
+    console.error(
+      "ERRO NO CATCH (A requisição falhou antes de chegar no Google):",
+      error,
+    );
     return Response.json({ ok: false }, { status: 500 });
   }
 }
